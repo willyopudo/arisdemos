@@ -4,6 +4,7 @@ import com.arisdemos.jpa.dto.BookDto;
 import com.arisdemos.jpa.model.Book;
 import com.arisdemos.jpa.model.BookPublisher;
 import com.arisdemos.jpa.model.Publisher;
+import com.arisdemos.jpa.repository.BookPublisherRepository;
 import com.arisdemos.jpa.repository.BookRepository;
 import com.arisdemos.jpa.repository.PublisherRepository;
 import jakarta.transaction.Transactional;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class BookController {
     private final BookRepository bookRepository;
     private final PublisherRepository publisherRepository;
+    private final BookPublisherRepository bpRepository;
 
     @PostMapping
     public BookDto createBook(@RequestBody BookDto bookDto) {
@@ -64,11 +66,17 @@ public class BookController {
                     existingBook.getBookPublishers().add(bp);
             }
 
-            existingBook.getBookPublishers().removeIf(bp -> !bookDto.getPublishers().contains(bp.getPublisher().getId()));
+            //existingBook.getBookPublishers().removeIf(bp -> !bookDto.getPublishers().contains(bp.getPublisher().getId()));
+            Iterator<BookPublisher> bps = existingBook.getBookPublishers().iterator();
+            while(bps.hasNext()){
+                BookPublisher bp = bps.next();
+                if(!bookDto.getPublishers().contains(bp.getPublisher().getId())){
+                    bps.remove();
+                    bpRepository.delete(bp);
+                }
+            }
 
-            //existingBook.setBookPublishers(bookPubs);
             savedBook =  bookRepository.save(existingBook);
-            bookRepository.flush();
             return ResponseEntity.ok(bookToBookDto(savedBook));
         }
         return ResponseEntity.notFound().build();
