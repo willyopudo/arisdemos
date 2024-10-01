@@ -1,5 +1,4 @@
-# HelloKoding - Practical Coding Guides
+# ArisDemos - Code practise by examples
 
-HelloKoding provides practical coding guides series of Spring Boot, Java, Algorithms and other topics on software engineering
+ArisDemos repo provides practical coding guides for various programming languages including C#, .Net Core, Spring Boot, Java, PHP, Algorithms and other topics on software engineering
 
-https://hellokoding.com
