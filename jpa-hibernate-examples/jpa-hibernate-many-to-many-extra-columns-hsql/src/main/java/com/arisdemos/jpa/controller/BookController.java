@@ -47,6 +47,15 @@ public class BookController {
         return bookListToBookDtoList(books);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getBookById(@PathVariable Integer id) {
+        Book book = bookRepository.findById(id).orElse(null);
+        if(book == null){
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(bookToBookDto(book));
+    }
+
     @Transactional
     @PutMapping("/{id}")
     public ResponseEntity<?> modifyBook(@PathVariable Long id, @RequestBody BookDto bookDto){
@@ -80,6 +89,17 @@ public class BookController {
             return ResponseEntity.ok(bookToBookDto(savedBook));
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBook(@PathVariable Long id) {
+        try {
+            if(bookRepository.findById(id.intValue()).isPresent())
+                return ResponseEntity.ok().body("{\"status\" : 200, \"message\" : \"Book deleted\"}");
+            else return ResponseEntity.notFound().build();
+        }catch (Exception e){
+            return ResponseEntity.internalServerError().body("{\"status\" : 500, \"message\" : \"Book could not be deleted\"}");
+        }
     }
 
     private BookDto bookToBookDto(Book book){
