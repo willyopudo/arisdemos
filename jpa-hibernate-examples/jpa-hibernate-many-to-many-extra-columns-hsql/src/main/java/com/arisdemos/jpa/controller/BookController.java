@@ -1,6 +1,7 @@
 package com.arisdemos.jpa.controller;
 
 import com.arisdemos.jpa.dto.BookDto;
+import com.arisdemos.jpa.dto.BookPublisherDto;
 import com.arisdemos.jpa.model.Book;
 import com.arisdemos.jpa.model.BookPublisher;
 import com.arisdemos.jpa.model.Publisher;
@@ -29,10 +30,11 @@ public class BookController {
         Book newBook =  new Book();
         newBook.setName(bookDto.getName());
 
-        for(Integer pubId : bookDto.getPublishers()){
-            Publisher p = publisherRepository.findById(pubId).orElse(null);
+        for(BookPublisherDto bpDto : bookDto.getPublishers()){
+            Publisher p = publisherRepository.findById(bpDto.getId()).orElse(null);
             BookPublisher bp = new BookPublisher(p, new Date());
             bp.setBook(newBook);
+            bp.setDefault(bpDto.isDefault());
             bookPubs.add(bp);
         }
 
@@ -67,19 +69,28 @@ public class BookController {
         if(existingBook != null){
             existingBook.setName(bookDto.getName());
 
-            for(Integer pubId : bookDto.getPublishers()){
-                Publisher p = publisherRepository.findById(pubId).orElse(null);
+            for(BookPublisherDto bpDto : bookDto.getPublishers()){
+                Publisher p = publisherRepository.findById(bpDto.getId()).orElse(null);
                 BookPublisher bp = new BookPublisher(p, new Date());
                 bp.setBook(existingBook);
-                if(existingBook.getBookPublishers().stream().noneMatch((e) -> e.getBook().getId() == id && e.getPublisher().getId() == pubId))
+                //Check if publisher in this iteration is not already related to the book we are updating
+                if(existingBook.getBookPublishers().stream().noneMatch((e) -> e.getBook().getId() == id && e.getPublisher().getId() == bpDto.getId()))
                     existingBook.getBookPublishers().add(bp);
+                else{
+                    //If the publisher exists for the book, we'll update only 'isDefault' field and persist later
+                    BookPublisher existingBp = existingBook.getBookPublishers().stream().filter((e) -> e.getPublisher().getId() == bpDto.getId()).findFirst().get();
+                    existingBp.setDefault(bpDto.isDefault());
+                }
             }
 
             //existingBook.getBookPublishers().removeIf(bp -> !bookDto.getPublishers().contains(bp.getPublisher().getId()));
+
+            //Let's iterate over the BookPublishers for the boom we want to update
+            //If a publisher is not in the list submitted in the Dto, we remove it and persist change
             Iterator<BookPublisher> bps = existingBook.getBookPublishers().iterator();
             while(bps.hasNext()){
                 BookPublisher bp = bps.next();
-                if(!bookDto.getPublishers().contains(bp.getPublisher().getId())){
+                if(bookDto.getPublishers().stream().noneMatch((e) -> e.getId() == bp.getPublisher().getId())){
                     bps.remove();
                     bpRepository.delete(bp);
                 }
@@ -104,10 +115,10 @@ public class BookController {
 
     private BookDto bookToBookDto(Book book){
         BookDto bookDto = new BookDto(book.getId(), book.getName(), null);
-        List<Integer> bookPubs = new ArrayList<>();
+        List<BookPublisherDto> bookPubs = new ArrayList<>();
         if(!book.getBookPublishers().isEmpty()){
             for(BookPublisher bp : book.getBookPublishers()){
-                bookPubs.add(bp.getPublisher().getId());
+                bookPubs.add(new BookPublisherDto(bp.getPublisher().getId(), bp.isDefault()) );
             }
         }
         bookDto.setPublishers(bookPubs);

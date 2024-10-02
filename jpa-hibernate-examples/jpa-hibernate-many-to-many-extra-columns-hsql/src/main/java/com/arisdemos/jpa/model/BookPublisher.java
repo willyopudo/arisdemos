@@ -26,6 +26,8 @@ public class BookPublisher {
 
     private Date publishedDate;
 
+    private boolean isDefault;
+
     public BookPublisher(Publisher publisher, Date publishedDate) {
         this.publisher = publisher;
         this.publishedDate = publishedDate;
